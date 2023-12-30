@@ -12,7 +12,7 @@
 #define COL2  A0
 
 #define EEPROM_ADDR_KEYPAD_INDEX  0
-#define WD_TIMEOUT_SECONDS        30
+#define WD_TIMEOUT_SECONDS        60*15
 
 
 TaHa TaHa_10ms;
@@ -51,6 +51,40 @@ void setup()
 
 }
 
+void change_index(char c)
+{
+  static uint8_t state = 0;
+  static uint8_t new_cntr = 0;
+
+  Serial.print("change_index: "); Serial.print(c); Serial.print("-");
+  Serial.print(state); Serial.print("-");Serial.println(new_cntr);
+  switch(state)
+  {
+    case 0:
+      if (c=='5') 
+      {
+        new_cntr++;
+        if (new_cntr > 3) state = 1;
+      }
+      else
+      {
+        new_cntr = 0;
+      }  
+      break;
+    case 1:
+      new_cntr = 0;
+      if ((c >= '1') && (c <= '4'))
+      {
+        unit_index = (uint8_t) (c-'0');
+        Serial.print("New index: "); Serial.println(unit_index);
+        EEPROM.write(EEPROM_ADDR_KEYPAD_INDEX, unit_index);
+      }
+      state = 0;
+      break;
+
+  }
+
+}
 void loop() {
     // put your main code here, to run repeatedly:
     TaHa_10ms.run();
@@ -71,6 +105,7 @@ void loop() {
             else 
                 Serial.print("0");
             Serial.println(">");
+            change_index(char(c & 0b01111111));
             wd_timeout_counter = 0;
             
         }
